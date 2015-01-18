@@ -33,12 +33,24 @@ use MwbExporter\Writer\WriterInterface;
 class Column extends BaseColumn {
 
 
+
+	public function getMorphId(){
+
+		return trim($this->parseComment('morphId'));
+	}
+
 	/**
 	 * @param WriterInterface $writer
 	 *
 	 * @return $this
 	 */
 	public function write( WriterInterface $writer ) {
+
+		if ($morphId = $this->getMorphId()){
+			echo 'FOUND MORPH ID: ', $morphId, "\n";
+		}
+		return $this;
+
 		$column_name = $this->getColumnName();
 		$column_type = $this->getFormatter()
 			->getDatatypeConverter()

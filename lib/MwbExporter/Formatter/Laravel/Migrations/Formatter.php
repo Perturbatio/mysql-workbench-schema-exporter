@@ -92,7 +92,7 @@ class Formatter extends BaseFormatter {
 	}
 
 	public function getTitle() {
-		return 'Laravel 4.2 Migrations';
+		return 'Laravel 4 Migrations';
 	}
 
 	public function getFileExtension() {

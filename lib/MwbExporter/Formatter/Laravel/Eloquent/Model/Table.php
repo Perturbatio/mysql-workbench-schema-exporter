@@ -28,12 +28,17 @@
 namespace MwbExporter\Formatter\Laravel\Eloquent\Model;
 
 use MwbExporter\Model\Table as BaseTable;
+use MwbExporter\Writer\Writer;
 use MwbExporter\Writer\WriterInterface;
 use MwbExporter\Formatter\Laravel\Migrations\Formatter;
 use MwbExporter\Helper\Comment;
+use Doctrine\Common\Inflector\Inflector;
 
 class Table extends BaseTable
 {
+	public $primaryIsId = true;
+	public $modelExtends = 'Eloquent';
+
 	public function getActAsBehaviour()
 	{
 		return trim($this->parseComment('actAs'));
@@ -56,6 +61,33 @@ class Table extends BaseTable
 	}
 
 	/**
+	 * @return array
+	 */
+	public function getMorphTo(){
+
+		return explode('|', trim($this->parseComment('morphTo')));
+
+	}
+
+
+	/**
+	 * @return array
+	 */
+	public function getMorphMany(){
+		return explode('|', trim($this->parseComment('morphMany')));
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getMorphOne(){
+
+		return explode('|', trim($this->parseComment('morphOne')));
+
+	}
+
+
+	/**
 	 * Get table file name.
 	 *
 	 * @param string $format  The filename format
@@ -74,6 +106,12 @@ class Table extends BaseTable
 		return 'models/'.$filename;
 	}
 
+
+	/**
+	 * @param WriterInterface $writer
+	 *
+	 * @return int
+	 */
 	public function writeTable(WriterInterface $writer)
 	{
 		if (!$this->isExternal()) {
@@ -85,7 +123,7 @@ class Table extends BaseTable
 				->write('<?php')
 				->write('// namespace here')
 				->write('')
-				->write('use \Eloquent;')
+				->write('use \%s;', $this->modelExtends)
 				->write('')
 
 				->writeCallback(function(WriterInterface $writer, Table $_this = null) {
@@ -97,77 +135,21 @@ class Table extends BaseTable
 					}
 				})
 
-				->write('class Create%sTable extends Migration {', $class_name)
+				->write('class %s extends %s {', $class_name, $this->modelExtends)
 				->write('')
 					->indent()
-					->write('public function up(){')
-						->indent()
-
-							->write('if (!Schema::hasTable(\'%s\')){', $table_name)
-								->indent()
-								->write('')
-								->write('Schema::table(\'%s\', function($table){', $table_name)
-									->indent()
-									->write('')
-
-									->writeIf($actAs = trim($this->getActAsBehaviour()), $actAs)
-
-									->writeCallback(function(WriterInterface $writer, Table $_this = null) {
-										$_this->getColumns()->write($writer);
-									})
-
-									->writeCallback(function(WriterInterface $writer, Table $_this = null) {
-
-										$externalRelation = $_this->getExternalRelations();
-
-										if (count($_this->getTableRelations()) || $externalRelation) {
-											$writer->write('// foreign relations');
-
-											foreach ($_this->getTableRelations() as $relation) {
-												$relation->write($writer);
-											}
-
-											if ($externalRelation) {
-												$writer->write($externalRelation);
-											}
-
-											//$table->foreign('user_id')->references('id')->on('users');
-										}
-									})
-
-									->write('')
-
-									->writeCallback(function(WriterInterface $writer, Table $_this = null) {
-										if (count($_this->getTableIndices())) {
-											$writer->write('// indices');
-											foreach ($_this->getTableIndices() as $index) {
-												$index->write($writer);
-											}
-											$writer->write('');
-
-										}
-									})
-
-									->write('// options')
-									->writeIf($engine = $this->parameters->get('tableEngine'), "\$table->engine = '{$engine}';")
-
-								->write('')
-								->outdent()
-								->write('});')
-							->write('')
-							->outdent()
-						->write('}')
-						->outdent()
-
-					->write('}')
-
 					->write('')
-					->write('public function down() {')
-					->indent()
-						->write('Schema::drop( \'%s\' );', $table_name)
-					->outdent()
-					->write('}')
-				->outdent()
+					->write('// add any traits here')
+					->write('');
+/*
+					->writeCallback(function(WriterInterface $writer, Table $_this = null) {
+						$_this->getColumns()->write($writer);
+					});
+*/
+					$this->writeRelationships($writer);
+
+
+				$writer->outdent()
 				->write('}')
 				->write('')
 
@@ -179,4 +161,155 @@ class Table extends BaseTable
 
 		return self::WRITE_EXTERNAL;
 	}
+
+	/**
+	 * @param WriterInterface $writer
+	 * @param                 $str
+	 *
+	 * @return string
+	 */
+	public function writeComment(WriterInterface $writer, $commentStr, $commentVars = array()){
+		$writer->write(implode("\n", Comment::wrap(strtr($commentStr, $commentVars), Comment::FORMAT_PHP)));
+	}
+
+	/**
+	 * @param WriterInterface $writer
+	 * @param                 $name
+	 * @param                 $writeCallback
+	 */
+	protected function writeFunction(WriterInterface $writer, $name, $comment, $writeCallback){
+		$this->writeComment($writer, $comment, $commentVars = array() );
+		$writer->write('function %s(){', $name)
+			->indent()
+				->write('')
+				->writeCallback($writeCallback)
+				->write('')
+			->outdent('')
+			->write('}')
+			->write('');
+	}
+
+	/**
+	 * @param WriterInterface $writer
+	 */
+	protected function writeMorphTo(WriterInterface $writer){
+		$morphTos = $this->getMorphTo();
+		foreach($morphTos as $morphTo) {
+			if ( !empty( $morphTo ) ){
+
+				$this->writeFunction( $writer, $morphTo, '@return \Illuminate\Database\Eloquent\Relations\MorphTo', function ( WriterInterface $writer ) {
+					$writer->write( 'return $this->morphTo();' );
+				} );
+			}
+		}
+	}
+
+	/**
+	 * @param WriterInterface $writer
+	 */
+	protected function writeMorphMany( WriterInterface $writer ) {
+		$morphManys = $this->getMorphMany();
+		foreach($morphManys as $morphMany) {
+			if ( !empty( $morphMany ) ){
+
+				list( $model, $relation ) = explode( ':', $morphMany );
+
+				if ( !empty( $model ) && !empty( $relation ) ){
+					$this->writeFunction( $writer, ucfirst( Inflector::pluralize( $model ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphMany', function ( WriterInterface $writer ) use ( $model, $relation ) {
+						$writer->write( 'return $this->morphMany(\'%s\',\'%s\');', Inflector::singularize( $model ), $relation );
+					} );
+				}
+			}
+		}
+	}
+
+	/**
+	 * @param WriterInterface $writer
+	 */
+	protected function writeMorphOne( WriterInterface $writer ) {
+		$morphOnes = $this->getMorphOne();
+		foreach($morphOnes as $morphOne) {
+			if ( !empty( $morphOne ) ){
+
+				list( $model, $relation ) = explode( ':', $morphOne );
+
+				if ( !empty( $model ) && !empty( $relation ) ){
+					$this->writeFunction( $writer, ucfirst( Inflector::pluralize( $model ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphOne', function ( WriterInterface $writer ) use ( $model, $relation ) {
+						$writer->write( 'return $this->morphOne(\'%s\',\'%s\');', Inflector::singularize( $model ), $relation );
+					} );
+				}
+			}
+		}
+	}
+
+	/**
+	 * @param WriterInterface $writer
+	 */
+	protected function writeRelationships(WriterInterface $writer){
+
+		//$externalRelation = $this->getExternalRelations();
+		$table_relations = $this->getTableRelations();
+
+		if (count($table_relations) ){//|| $externalRelation) {
+
+
+			foreach ($table_relations as $relation) {
+				$writer->write('//table_relation');
+				$relation->write($writer);
+			}
+/*
+			if ($externalRelation) {
+				$writer->write('//external_relation');
+				$writer->write($externalRelation);
+			}
+*/
+		}
+
+		$this->writeMorphTo($writer);
+		$this->writeMorphMany($writer);
+
+		/*
+		$writer->writeIf($actAs = trim($this->getActAsBehaviour()), $actAs)
+
+			->writeCallback(function(WriterInterface $writer, Table $_this = null) {
+				$_this->getColumns()->write($writer);
+			})
+
+			->writeCallback(function(WriterInterface $writer, Table $_this = null) {
+
+				$externalRelation = $_this->getExternalRelations();
+
+				if (count($_this->getTableRelations()) || $externalRelation) {
+					$writer->write('// foreign relations');
+
+					foreach ($_this->getTableRelations() as $relation) {
+						$relation->write($writer);
+					}
+
+					if ($externalRelation) {
+						$writer->write($externalRelation);
+					}
+
+				}
+			})
+
+			->write('')
+
+			->writeCallback(function(WriterInterface $writer, Table $_this = null) {
+				if (count($_this->getTableIndices())) {
+					$writer->write('// indices');
+					foreach ($_this->getTableIndices() as $index) {
+						$index->write($writer);
+					}
+					$writer->write('');
+
+				}
+			})
+
+
+			->write('');
+		*/
+	}
+
+
 }

@@ -29,23 +29,24 @@ namespace MwbExporter\Formatter\Laravel;
 
 use MwbExporter\Formatter\Formatter as BaseFormatter;
 
-abstract class Formatter extends BaseFormatter
-{
-    /**
-     * (non-PHPdoc)
-     * @see \MwbExporter\Formatter\Formatter::createDatatypeConverter()
-     */
-    protected function createDatatypeConverter()
-    {
-        return new DatatypeConverter();
-    }
+abstract class Formatter extends BaseFormatter {
+	/**
+	 * (non-PHPdoc)
+	 * @see \MwbExporter\Formatter\Formatter::createDatatypeConverter()
+	 */
+	protected function createDatatypeConverter() {
+		return new DatatypeConverter();
+	}
 
-    /**
-     * (non-PHPdoc)
-     * @see \MwbExporter\Formatter\Formatter::getCommentTagPrefixes()
-     */
-    protected function getCommentTagPrefixes()
-    {
-        return array_merge(parent::getCommentTagPrefixes(), array('l', 'laravel'));
-    }
+	/**
+	 * (non-PHPdoc)
+	 * @see \MwbExporter\Formatter\Formatter::getCommentTagPrefixes()
+	 */
+	protected function getCommentTagPrefixes() {
+		return array_merge( parent::getCommentTagPrefixes(), array(
+			'l',
+			'laravel'
+		) );
+	}
+
 }

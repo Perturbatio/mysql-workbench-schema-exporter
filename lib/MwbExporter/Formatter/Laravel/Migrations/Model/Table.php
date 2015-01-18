@@ -78,7 +78,7 @@ class Table extends BaseTable
 	{
 		if (!$this->isExternal()) {
 			$table_name = ($this->getConfig()->get(Formatter::CFG_EXTEND_TABLENAME_WITH_SCHEMA) ? $this->getSchema()->getName().'.' : '').$this->getRawTableName();
-			$class_name = str_replace(' ', '', ucwords(str_replace('_', ' ', $table_name)));
+			$class_name  = $this->getModelName(); //= str_replace(' ', '', ucwords(str_replace('_', ' ', $table_name)));
 
 			$writer
 				->open($this->getTableFileName())
@@ -131,7 +131,6 @@ class Table extends BaseTable
 												$writer->write($externalRelation);
 											}
 
-											//$table->foreign('user_id')->references('id')->on('users');
 										}
 									})
 

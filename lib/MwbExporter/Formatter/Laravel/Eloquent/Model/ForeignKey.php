@@ -38,10 +38,11 @@ class ForeignKey extends BaseForeignKey
         return trim($this->parseComment('foreignAlias'));
     }
 
+
     public function write(WriterInterface $writer)
     {
         if ($this->referencedTable == null) {
-            $writer->write('// There is another foreign key declaration.');
+            $writer->write('// referencedTable is null');
         } else {
             $local = array_shift($this->getLocals());
             $foreign = array_shift($this->getForeigns());
@@ -49,7 +50,9 @@ class ForeignKey extends BaseForeignKey
             $onDelete = strtolower($this->parameters->get('deleteRule'));
             $onUpdate = strtolower($this->parameters->get('updateRule'));
 
-            $writer->write(
+            $writer->write('');
+
+            /*$writer->write(
                 '$table->foreign(\'%s\')->references(\'%s\')->on(\'%s\')',
                 $local->getColumnName(),
                 $foreign->getColumnName(),
@@ -59,8 +62,20 @@ class ForeignKey extends BaseForeignKey
             $writer->write('->onDelete(\'%s\')', $onDelete);
             $writer->write('->onUpdate(\'%s\')', $onUpdate);
             $writer->write(';');
+            */
+
         }
 
         return $this;
+    }
+
+
+    /**
+     * @param $str
+     *
+     * @return mixed
+     */
+    protected function getClassName( $str ) {
+        return str_replace( ' ', '', ucwords( str_replace( '_', ' ', $str ) ) );
     }
 }
