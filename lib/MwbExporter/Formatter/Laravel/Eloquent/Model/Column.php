@@ -49,6 +49,17 @@ class Column extends BaseColumn {
 		if ($morphId = $this->getMorphId()){
 			echo 'FOUND MORPH ID: ', $morphId, "\n";
 		}
+		//var_dump($this->debug());
+
+		//var_dump($this->getTable()->parameters->getAll());
+
+		if ($this->hasOneToManyRelation()){
+			echo $this->getName(), '::';
+			//print_r($this->foreigns);
+		}
+		//echo $this->getName(),':', $this->hasOneToManyRelation(),"\n";
+
+
 		return $this;
 
 		$column_name = $this->getColumnName();

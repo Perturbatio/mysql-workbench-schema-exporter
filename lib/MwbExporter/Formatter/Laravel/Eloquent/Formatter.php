@@ -34,13 +34,16 @@ class Formatter extends BaseFormatter {
 	const CFG_EXTEND_TABLENAME_WITH_SCHEMA = 'extendTableNameWithSchemaName';
 
 	protected function init() {
+
 		parent::init();
+
 		$this->addConfigurations(array(
 			static::CFG_INDENTATION                  => 1,
 			static::CFG_FILENAME                     => '%entity%.%extension%',
 			static::CFG_EXTEND_TABLENAME_WITH_SCHEMA => FALSE,
 			static::CFG_USE_TABS                     => 'useTabs',
 		));
+
 	}
 
 	/**

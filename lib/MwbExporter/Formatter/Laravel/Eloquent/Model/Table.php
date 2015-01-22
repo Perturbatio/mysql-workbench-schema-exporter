@@ -33,11 +33,15 @@ use MwbExporter\Writer\WriterInterface;
 use MwbExporter\Formatter\Laravel\Migrations\Formatter;
 use MwbExporter\Helper\Comment;
 use Doctrine\Common\Inflector\Inflector;
+use MwbExporter\Formatter\Laravel\Helpers\PHPHelper;
+
 
 class Table extends BaseTable
 {
 	public $primaryIsId = true;
 	public $modelExtends = 'Eloquent';
+
+	protected $referencedColumns = [];
 
 	public function getActAsBehaviour()
 	{
@@ -88,6 +92,13 @@ class Table extends BaseTable
 
 
 	/**
+	 * @return array
+	 */
+	public function getHasMany(){
+		return explode('|', trim($this->parseComment('hasMany')));
+	}
+
+	/**
 	 * Get table file name.
 	 *
 	 * @param string $format  The filename format
@@ -106,6 +117,23 @@ class Table extends BaseTable
 		return 'models/'.$filename;
 	}
 
+	protected function findReferencedColumns(){
+
+		$columns = $this->getColumns();
+		/**
+		 * @var $column \MwbExporter\Model\Columns
+		 */
+		foreach($columns as $column){
+			//$column->hasOneToManyRelation();
+		}
+		/*
+		if ($this->hasOneToManyRelation()){
+			echo $this->getName(), '::';
+			print_r($this->foreigns);
+		}
+		*/
+	}
+
 
 	/**
 	 * @param WriterInterface $writer
@@ -114,7 +142,9 @@ class Table extends BaseTable
 	 */
 	public function writeTable(WriterInterface $writer)
 	{
-		if (!$this->isExternal()) {
+		$this->initManyToManyRelations();
+
+		if (!$this->isExternal() && !$this->isManyToMany()) {
 			$table_name = ($this->getConfig()->get(Formatter::CFG_EXTEND_TABLENAME_WITH_SCHEMA) ? $this->getSchema()->getName().'.' : '').$this->getRawTableName();
 			$class_name = str_replace(' ', '', ucwords(str_replace('_', ' ', $table_name)));
 
@@ -135,21 +165,19 @@ class Table extends BaseTable
 					}
 				})
 
-				->write('class %s extends %s {', $class_name, $this->modelExtends)
+				->write('class %s extends %s {', Inflector::singularize($class_name), $this->modelExtends)
 				->write('')
 					->indent()
 					->write('')
 					->write('// add any traits here')
-					->write('');
-/*
+					->write('')
 					->writeCallback(function(WriterInterface $writer, Table $_this = null) {
 						$_this->getColumns()->write($writer);
 					});
-*/
 					$this->writeRelationships($writer);
 
 
-				$writer->outdent()
+			$writer->outdent()
 				->write('}')
 				->write('')
 
@@ -159,14 +187,15 @@ class Table extends BaseTable
 			return self::WRITE_OK;
 		}
 
+		//var_dump($this->getSchema());
+
 		return self::WRITE_EXTERNAL;
 	}
 
 	/**
 	 * @param WriterInterface $writer
-	 * @param                 $str
-	 *
-	 * @return string
+	 * @param                 $commentStr
+	 * @param array           $commentVars
 	 */
 	public function writeComment(WriterInterface $writer, $commentStr, $commentVars = array()){
 		$writer->write(implode("\n", Comment::wrap(strtr($commentStr, $commentVars), Comment::FORMAT_PHP)));
@@ -192,16 +221,38 @@ class Table extends BaseTable
 	/**
 	 * @param WriterInterface $writer
 	 */
+	protected function writeHasMany( WriterInterface $writer ) {
+		$hasManys = $this->getHasMany();
+		foreach($hasManys as $hasMany) {
+			if ( !empty( $hasMany ) ){
+
+				//list( $model, $relation ) = explode( ':', $hasMany );
+
+				//if ( !empty( $hasMany )  ){
+					$this->writeFunction( $writer, ( Inflector::pluralize( ucfirst( $hasMany ) ) ), '@return \Illuminate\Database\Eloquent\Relations\HasMany', function ( WriterInterface $writer ) use ( $hasMany ) {
+						$writer->write( 'return $this->hasMany(\'%s\');', Inflector::singularize( ucfirst( $hasMany ) ));
+					} );
+				//}
+			}
+		}
+	}
+
+	/**
+	 * @param WriterInterface $writer
+	 */
 	protected function writeMorphTo(WriterInterface $writer){
+
 		$morphTos = $this->getMorphTo();
+
 		foreach($morphTos as $morphTo) {
 			if ( !empty( $morphTo ) ){
 
-				$this->writeFunction( $writer, $morphTo, '@return \Illuminate\Database\Eloquent\Relations\MorphTo', function ( WriterInterface $writer ) {
+				PHPHelper::writeFunction( $writer, $morphTo, '@return \Illuminate\Database\Eloquent\Relations\MorphTo', function ( WriterInterface $writer ) {
 					$writer->write( 'return $this->morphTo();' );
 				} );
 			}
 		}
+
 	}
 
 	/**
@@ -215,8 +266,8 @@ class Table extends BaseTable
 				list( $model, $relation ) = explode( ':', $morphMany );
 
 				if ( !empty( $model ) && !empty( $relation ) ){
-					$this->writeFunction( $writer, ucfirst( Inflector::pluralize( $model ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphMany', function ( WriterInterface $writer ) use ( $model, $relation ) {
-						$writer->write( 'return $this->morphMany(\'%s\',\'%s\');', Inflector::singularize( $model ), $relation );
+					$this->writeFunction( $writer, ( Inflector::pluralize( $model ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphMany', function ( WriterInterface $writer ) use ( $model, $relation ) {
+						$writer->write( 'return $this->morphMany(\'%s\',\'%s\');', Inflector::singularize( ucfirst( $model ) ), $relation );
 					} );
 				}
 			}
@@ -234,8 +285,8 @@ class Table extends BaseTable
 				list( $model, $relation ) = explode( ':', $morphOne );
 
 				if ( !empty( $model ) && !empty( $relation ) ){
-					$this->writeFunction( $writer, ucfirst( Inflector::pluralize( $model ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphOne', function ( WriterInterface $writer ) use ( $model, $relation ) {
-						$writer->write( 'return $this->morphOne(\'%s\',\'%s\');', Inflector::singularize( $model ), $relation );
+					$this->writeFunction( $writer, ( Inflector::pluralize( $model ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphOne', function ( WriterInterface $writer ) use ( $model, $relation ) {
+						$writer->write( 'return $this->morphOne(\'%s\',\'%s\');', Inflector::singularize( ucfirst( $model ) ), $relation );
 					} );
 				}
 			}
@@ -265,8 +316,12 @@ class Table extends BaseTable
 */
 		}
 
+		$this->writeHasMany($writer);
+
 		$this->writeMorphTo($writer);
 		$this->writeMorphMany($writer);
+		$this->writeMorphOne($writer);
+
 
 		/*
 		$writer->writeIf($actAs = trim($this->getActAsBehaviour()), $actAs)

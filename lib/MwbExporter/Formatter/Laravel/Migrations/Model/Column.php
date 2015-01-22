@@ -39,13 +39,13 @@ class Column extends BaseColumn {
 	 * @return $this
 	 */
 	public function write( WriterInterface $writer ) {
+
 		$column_name = $this->getColumnName();
 		$column_type = $this->getFormatter()
 			->getDatatypeConverter()
 			->getType( $this );
 
 		$handlerMethod = 'handle_' . $column_type;
-
 
 		$writer->writeIf( $comment = $this->getParameters()
 			->get( 'comment' ), '// %s', $comment );

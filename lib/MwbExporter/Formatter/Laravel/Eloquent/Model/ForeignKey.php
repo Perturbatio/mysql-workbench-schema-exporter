@@ -30,6 +30,7 @@ namespace MwbExporter\Formatter\Laravel\Eloquent\Model;
 use MwbExporter\Model\ForeignKey as BaseForeignKey;
 use Doctrine\Common\Inflector\Inflector;
 use MwbExporter\Writer\WriterInterface;
+use MwbExporter\Formatter\Laravel\Helpers\PHPHelper;
 
 class ForeignKey extends BaseForeignKey
 {
@@ -44,15 +45,22 @@ class ForeignKey extends BaseForeignKey
         if ($this->referencedTable == null) {
             $writer->write('// referencedTable is null');
         } else {
+
+
             $local = array_shift($this->getLocals());
             $foreign = array_shift($this->getForeigns());
+            //$foreign->getTable()->get
 
             $onDelete = strtolower($this->parameters->get('deleteRule'));
             $onUpdate = strtolower($this->parameters->get('updateRule'));
 
             $writer->write('');
 
-            /*$writer->write(
+            PHPHelper::writeFunction( $writer, Inflector::pluralize($foreign->getTable()->getModelName()), '@return \Illuminate\Database\Eloquent\Relations\HasOne', function ( WriterInterface $writer ) use( $foreign ){
+                $writer->write( "return \$this->hasOne('%s');", Inflector::singularize($foreign->getTable()->getModelName()) );
+            } );
+/*
+            $writer->write(
                 '$table->foreign(\'%s\')->references(\'%s\')->on(\'%s\')',
                 $local->getColumnName(),
                 $foreign->getColumnName(),
@@ -61,8 +69,8 @@ class ForeignKey extends BaseForeignKey
 
             $writer->write('->onDelete(\'%s\')', $onDelete);
             $writer->write('->onUpdate(\'%s\')', $onUpdate);
-            $writer->write(';');
-            */
+            $writer->write(';');*/
+
 
         }
 
