@@ -25,7 +25,7 @@
  * THE SOFTWARE.
  */
 
-namespace MwbExporter\Formatter\Laravel\Migrations;
+namespace MwbExporter\Formatter\Laravel\Forms;
 
 use MwbExporter\Formatter\Laravel\Formatter as BaseFormatter;
 use MwbExporter\Model\Base;
@@ -92,7 +92,7 @@ class Formatter extends BaseFormatter {
 	}
 
 	public function getTitle() {
-		return 'Laravel Migrations';
+		return 'Laravel Forms using kristijanhusak/laravel-form-builder';
 	}
 
 	public function getFileExtension() {

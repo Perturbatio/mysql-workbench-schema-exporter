@@ -95,7 +95,7 @@ class Formatter extends BaseFormatter {
 	}
 
 	public function getTitle() {
-		return 'Laravel 4.2 Eloquent';
+		return 'Laravel Eloquent models';
 	}
 
 	public function getFileExtension() {
