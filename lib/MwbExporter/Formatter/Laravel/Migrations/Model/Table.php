@@ -64,13 +64,17 @@ class Table extends BaseTable
 	 */
 	public function getTableFileName($format = null, $vars = array())
 	{
+		static $counter = 0;
+		$counter++;
+		$date = date('Y_m_d_His') ;
 		/*
 		if (0 === strlen($filename = $this->getDocument()->translateFilename($format, $this, $vars)))
 		{
 			$filename = 'models/'.implode('.', array($this->getSchema()->getName(), $this->getRawTableName(), $this->getFormatter()->getFileExtension()));
 		}
 		*/
-		$filename = 'migrations/'.implode('.', array( $this->getSchema()->getName(), $this->getRawTableName(), $this->getFormatter()->getFileExtension()));
+		$prefix = str_pad($counter, 4, '0', STR_PAD_LEFT) . "_create_";
+		$filename = 'migrations/' . $prefix .implode('.', array( $this->getSchema()->getName(), $this->getRawTableName(), $this->getFormatter()->getFileExtension()));
 		return $filename;
 	}
 

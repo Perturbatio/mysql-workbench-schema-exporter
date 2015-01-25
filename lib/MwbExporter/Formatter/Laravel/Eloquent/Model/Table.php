@@ -167,14 +167,14 @@ class Table extends BaseTable
 
 				->write('class %s extends %s {', Inflector::singularize($class_name), $this->modelExtends)
 				->write('')
-					->indent()
-					->write('')
-					->write('// add any traits here')
-					->write('')
-					->writeCallback(function(WriterInterface $writer, Table $_this = null) {
-						$_this->getColumns()->write($writer);
-					});
-					$this->writeRelationships($writer);
+				->indent()
+				->write('')
+				->write('// add any traits here')
+				->write('')
+				->writeCallback(function(WriterInterface $writer, Table $_this = null) {
+					$_this->getColumns()->write($writer);
+				});
+			$this->writeRelationships($writer);
 
 
 			$writer->outdent()
@@ -210,9 +210,9 @@ class Table extends BaseTable
 		$this->writeComment($writer, $comment, $commentVars = array() );
 		$writer->write('function %s(){', $name)
 			->indent()
-				->write('')
-				->writeCallback($writeCallback)
-				->write('')
+			->write('')
+			->writeCallback($writeCallback)
+			->write('')
 			->outdent('')
 			->write('}')
 			->write('');
@@ -229,9 +229,9 @@ class Table extends BaseTable
 				//list( $model, $relation ) = explode( ':', $hasMany );
 
 				//if ( !empty( $hasMany )  ){
-					$this->writeFunction( $writer, ( Inflector::pluralize( ucfirst( $hasMany ) ) ), '@return \Illuminate\Database\Eloquent\Relations\HasMany', function ( WriterInterface $writer ) use ( $hasMany ) {
-						$writer->write( 'return $this->hasMany(\'%s\');', Inflector::singularize( ucfirst( $hasMany ) ));
-					} );
+				$this->writeFunction( $writer, ( Inflector::pluralize( ucfirst( $hasMany ) ) ), '@return \Illuminate\Database\Eloquent\Relations\HasMany', function ( WriterInterface $writer ) use ( $hasMany ) {
+					$writer->write( 'return $this->hasMany(\'%s\');', Inflector::singularize( ucfirst( $hasMany ) ));
+				} );
 				//}
 			}
 		}
@@ -247,7 +247,7 @@ class Table extends BaseTable
 		foreach($morphTos as $morphTo) {
 			if ( !empty( $morphTo ) ){
 
-				PHPHelper::writeFunction( $writer, $morphTo, '@return \Illuminate\Database\Eloquent\Relations\MorphTo', function ( WriterInterface $writer ) {
+				PHPHelper::writeFunction( $writer, ucfirst($morphTo), '@return \Illuminate\Database\Eloquent\Relations\MorphTo', function ( WriterInterface $writer ) {
 					$writer->write( 'return $this->morphTo();' );
 				} );
 			}
@@ -266,7 +266,7 @@ class Table extends BaseTable
 				list( $model, $relation ) = explode( ':', $morphMany );
 
 				if ( !empty( $model ) && !empty( $relation ) ){
-					$this->writeFunction( $writer, ( Inflector::pluralize( $model ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphMany', function ( WriterInterface $writer ) use ( $model, $relation ) {
+					$this->writeFunction( $writer, ( Inflector::pluralize( ucfirst($model) ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphMany', function ( WriterInterface $writer ) use ( $model, $relation ) {
 						$writer->write( 'return $this->morphMany(\'%s\',\'%s\');', Inflector::singularize( ucfirst( $model ) ), $relation );
 					} );
 				}
@@ -308,12 +308,12 @@ class Table extends BaseTable
 				$writer->write('//table_relation');
 				$relation->write($writer);
 			}
-/*
-			if ($externalRelation) {
-				$writer->write('//external_relation');
-				$writer->write($externalRelation);
-			}
-*/
+			/*
+						if ($externalRelation) {
+							$writer->write('//external_relation');
+							$writer->write($externalRelation);
+						}
+			*/
 		}
 
 		$this->writeHasMany($writer);

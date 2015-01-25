@@ -45,7 +45,7 @@ class DatatypeConverter extends BaseDatatypeConverter
             static::DATATYPE_CHAR               => 'char',
             static::DATATYPE_VARCHAR            => 'string',
             static::DATATYPE_BINARY             => 'binary',
-            static::DATATYPE_VARBINARY          => 'string',//laravel lacks varbinary, see: https://github.com/laravel/framework/issues/3297
+            static::DATATYPE_VARBINARY          => 'binary',//laravel lacks varbinary, see: https://github.com/laravel/framework/issues/3297
             static::DATATYPE_TINYTEXT           => 'string',
             static::DATATYPE_TEXT               => 'text',
             static::DATATYPE_MEDIUMTEXT         => 'mediumText',//'clob(16777215)',

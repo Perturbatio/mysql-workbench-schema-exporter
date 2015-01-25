@@ -27,6 +27,7 @@
 
 namespace MwbExporter\Model;
 
+use Exception;
 use MwbExporter\Formatter\FormatterInterface;
 use MwbExporter\Writer\WriterInterface;
 use Doctrine\Common\Inflector\Inflector;
@@ -129,7 +130,8 @@ class Table extends Base
      */
     public function initManyToManyRelations()
     {
-        if ($this->isManyToMany()) {
+
+        if ($this->isManyToMany() && isset($this->foreignKeys[0]) && isset($this->foreignKeys[1])) {
             $fk1 = $this->foreignKeys[0];
             $fk2 = $this->foreignKeys[1];
             $this->injectManyToMany($fk1, $fk2);
@@ -148,7 +150,12 @@ class Table extends Base
      */
     protected function injectManyToMany(ForeignKey $fk1, ForeignKey $fk2)
     {
-        $fk1->getReferencedTable()->setManyToManyRelation(array('reference' => $fk1, 'refTable' => $fk2->getReferencedTable()));
+
+        $fk1->getReferencedTable()
+            ->setManyToManyRelation( array(
+                'reference' => $fk1,
+                'refTable'  => $fk2->getReferencedTable()
+            ) );
 
         return $this;
     }

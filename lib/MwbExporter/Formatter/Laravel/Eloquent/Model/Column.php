@@ -54,7 +54,7 @@ class Column extends BaseColumn {
 		//var_dump($this->getTable()->parameters->getAll());
 
 		if ($this->hasOneToManyRelation()){
-			echo $this->getName(), '::';
+			//echo $this->getName(), '::';
 			//print_r($this->foreigns);
 		}
 		//echo $this->getName(),':', $this->hasOneToManyRelation(),"\n";
