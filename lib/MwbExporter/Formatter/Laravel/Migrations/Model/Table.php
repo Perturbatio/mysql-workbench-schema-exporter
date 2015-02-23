@@ -55,6 +55,13 @@ class Table extends BaseTable
 		}
 	}
 
+
+	/**
+	 * @return array
+	 */
+	public function getUsesTimestamps(){
+		return (bool)trim($this->parseComment('timestamps'));
+	}
 	/**
 	 * Get table file name.
 	 *
@@ -150,6 +157,8 @@ class Table extends BaseTable
 
 										}
 									})
+
+									->writeIf($this->getUsesTimestamps(), '$this->timestamps();')
 
 									->write('// options')
 									->writeIf($engine = $this->parameters->get('tableEngine'), "\$table->engine = '{$engine}';")

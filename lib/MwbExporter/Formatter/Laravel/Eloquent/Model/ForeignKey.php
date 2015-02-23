@@ -56,7 +56,7 @@ class ForeignKey extends BaseForeignKey
 
             $writer->write('');
 
-            PHPHelper::writeFunction( $writer, Inflector::pluralize($foreign->getTable()->getModelName()), '@return \Illuminate\Database\Eloquent\Relations\HasOne', function ( WriterInterface $writer ) use( $foreign ){
+            PHPHelper::writeFunction( $writer, Inflector::singularize($foreign->getTable()->getModelName()), '@return \Illuminate\Database\Eloquent\Relations\HasOne', function ( WriterInterface $writer ) use( $foreign ){
                 $writer->write( "return \$this->hasOne('%s');", Inflector::singularize($foreign->getTable()->getModelName()) );
             } );
 /*

@@ -151,7 +151,7 @@ class Table extends BaseTable
 			$writer
 				->open($this->getTableFileName())
 				->write('<?php')
-				->write('// namespace here')
+				->write('namespace App;')
 				->write('')
 				->write('use \%s;', $this->modelExtends)
 				->write('')
@@ -168,13 +168,15 @@ class Table extends BaseTable
 				->write('class %s extends %s {', Inflector::singularize($class_name), $this->modelExtends)
 				->write('')
 				->indent()
-				->write('')
-				->write('// add any traits here')
-				->write('')
-				->writeCallback(function(WriterInterface $writer, Table $_this = null) {
-					$_this->getColumns()->write($writer);
-				});
-			$this->writeRelationships($writer);
+					->write('')
+					->write('// add any traits here')
+					->write('')
+					->write("protected \$table = \"{$table_name}\";")
+					->write('')
+					->writeCallback(function(WriterInterface $writer, Table $_this = null) {
+						$_this->getColumns()->write($writer);
+					});
+					$this->writeRelationships($writer);
 
 
 			$writer->outdent()
@@ -285,7 +287,7 @@ class Table extends BaseTable
 				list( $model, $relation ) = explode( ':', $morphOne );
 
 				if ( !empty( $model ) && !empty( $relation ) ){
-					$this->writeFunction( $writer, ( Inflector::pluralize( $model ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphOne', function ( WriterInterface $writer ) use ( $model, $relation ) {
+					$this->writeFunction( $writer, ( ucFirst( Inflector::singularize( $model ) ) ), '@return \Illuminate\Database\Eloquent\Relations\MorphOne', function ( WriterInterface $writer ) use ( $model, $relation ) {
 						$writer->write( 'return $this->morphOne(\'%s\',\'%s\');', Inflector::singularize( ucfirst( $model ) ), $relation );
 					} );
 				}
